@@ -11,16 +11,16 @@ import (
 //	fmt.Fprint(w,GetPlayerScore(player))
 //}
 
-func GetPlayerScore(name string) string {
-	if name == "Pepper" {
-		return "20"
-	}
-
-	if name == "Floyd" {
-		return "10"
-	}
-	return ""
-}
+//func GetPlayerScore(name string) string {
+//	if name == "Pepper" {
+//		return "20"
+//	}
+//
+//	if name == "Floyd" {
+//		return "10"
+//	}
+//	return ""
+//}
 
 type PlayerStore interface {
 	GetPlayerScore(name string) int
@@ -46,7 +46,6 @@ func (p *PlayerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p *PlayerServer) showScore(w http.ResponseWriter, player string) {
-
 	score := p.store.GetPlayerScore(player)
 	if score == 0 {
 		w.WriteHeader(http.StatusNotFound)
