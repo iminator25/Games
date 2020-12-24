@@ -1,9 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 )
 
 //func PlayerServer(w http.ResponseWriter, r *http.Request) {
@@ -25,14 +25,51 @@ import (
 type PlayerStore interface {
 	GetPlayerScore(name string) int
 	RecordWin(name string)
+	GetLeague() []Player
+}
+
+type Player struct {
+	Name string
+	Wins int
 }
 
 type PlayerServer struct {
 	store PlayerStore
+	http.Handler
 }
 
-func (p *PlayerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	player := strings.TrimPrefix(r.URL.Path, "/players/")
+func NewPlayerServer(store PlayerStore) *PlayerServer {
+	p := new(PlayerServer)
+	p.store = store
+
+	router := http.NewServeMux()
+	router.Handle("/league", http.HandlerFunc(p.leagueHandler))
+	router.Handle("/players/", http.HandlerFunc(p.playersHandler))
+
+	p.Handler = router
+
+	return p
+}
+
+//func (p *PlayerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+//	p.router.ServeHTTP(w,r)
+//}
+
+func (p *PlayerServer) leagueHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("content-type", "application/json")
+	json.NewEncoder(w).Encode(p.store.GetLeague())
+	//w.WriteHeader(http.StatusOK)
+
+}
+
+//func (p *PlayerServer) getLeagueTable() []Player {
+//	return []Player{
+//		{"Chris", 20},
+//	}
+//}
+
+func (p *PlayerServer) playersHandler(w http.ResponseWriter, r *http.Request) {
+	player := r.URL.Path[len("/players/"):]
 
 	switch r.Method {
 	case http.MethodPost:
@@ -42,7 +79,6 @@ func (p *PlayerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		p.showScore(w, player)
 
 	}
-
 }
 
 func (p *PlayerServer) showScore(w http.ResponseWriter, player string) {
@@ -62,6 +98,7 @@ func (p *PlayerServer) processWin(w http.ResponseWriter, player string) {
 type StubPlayerStore struct {
 	scores   map[string]int
 	winCalls []string
+	league   []Player
 }
 
 func (s *StubPlayerStore) GetPlayerScore(name string) int {
@@ -71,4 +108,8 @@ func (s *StubPlayerStore) GetPlayerScore(name string) int {
 
 func (s *StubPlayerStore) RecordWin(name string) {
 	s.winCalls = append(s.winCalls, name)
+}
+
+func (s *StubPlayerStore) GetLeague() []Player {
+	return s.league
 }
